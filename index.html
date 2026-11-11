@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Underfilled &middot; a pre-flight check for trial enrollment risk</title>
+  <meta name="description" content="Underfilled reads 38,287 Phase 2 and 3 trials on ClinicalTrials.gov to show how often trials stop because they cannot enroll, and which design choices travel with that risk." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="mast">
+    <div class="wrap mast__row">
+      <p class="mast__form">Form UF-1 &middot; Protocol pre-flight</p>
+      <p class="mast__src">Source: ClinicalTrials.gov API v2 &middot; pulled Nov 11, 2026</p>
+    </div>
+    <div class="wrap mast__title">
+      <h1>Under<em>filled</em></h1>
+      <p class="mast__lede">Most trial risk tools ask whether the drug will work. This one asks a duller question that kills more studies: <strong>will anyone sign up?</strong> It reads every Phase 2 and Phase 3 interventional trial on ClinicalTrials.gov (Phase 1/2 and 2/3 included) that started from 2010 to 2019 and is now marked completed or terminated, and shows which design choices travel with a stop for low accrual.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="wrap finding" aria-labelledby="finding-h">
+      <div class="finding__big">
+        <p class="label">Section A &middot; the finding</p>
+        <h2 id="finding-h"><span class="num" data-bind="lowAccrual">1,960</span> trials stopped because they could not enroll.</h2>
+        <p class="finding__sub">That is <b data-bind="shareOfTerm">31%</b> of the <span data-bind="terminated">6,357</span> terminated trials in the cohort, more than safety and efficacy stops put together. Across all <span data-bind="cohortN">38,287</span> trials, about <b data-bind="baseRate">1 in 20</b> ended this way.</p>
+      </div>
+      <figure class="reasons" aria-labelledby="reasons-cap">
+        <figcaption id="reasons-cap" class="label">A.1 &middot; Why terminated trials say they stopped</figcaption>
+        <ol class="reasons__list" id="reasons"></ol>
+        <p class="note">Reasons come from the free-text <code>whyStopped</code> field, sorted by rules in <a href="https://github.com/sheinapribadi-star/underfilled/blob/main/scripts/reasons.py">reasons.py</a>. On 150 hand-read held-out trials the low-accrual bucket was right <span data-bind="clfPrecision">96%</span> of the time and caught <span data-bind="clfRecall">91%</span> of true cases.</p>
+      </figure>
+    </section>
+
+    <section class="wrap check" id="check" aria-labelledby="check-h">
+      <div class="check__head">
+        <p class="label">Section B &middot; pre-flight check</p>
+        <h2 id="check-h">Describe a protocol. See how trials like it fared.</h2>
+        <p>Start from an example design or fill in your own. The estimate updates as you type. Examples are made-up designs, not real studies.</p>
+        <div class="presets" role="group" aria-label="Example designs">
+          <button type="button" class="preset" data-preset="academic">Example: academic Phase 2 cancer study, one site</button>
+          <button type="button" class="preset" data-preset="industry">Example: industry Phase 3, 80 sites, blinded</button>
+          <button type="button" class="preset" data-preset="rare">Example: Phase 1/2 inherited disease, kids only</button>
+        </div>
+      </div>
+
+      <form class="crf" id="crf" autocomplete="off">
+        <fieldset>
+          <legend><span class="fid">B.1</span> Study</legend>
+          <div class="field">
+            <span class="field__name">Phase</span>
+            <div class="seg" role="radiogroup" aria-label="Phase">
+              <label><input type="radio" name="phase" value="1/2" /><span>1/2</span></label>
+              <label><input type="radio" name="phase" value="2" checked /><span>2</span></label>
+              <label><input type="radio" name="phase" value="2/3" /><span>2/3</span></label>
+              <label><input type="radio" name="phase" value="3" /><span>3</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <span class="field__name">Lead sponsor</span>
+            <div class="seg" role="radiogroup" aria-label="Lead sponsor">
+              <label><input type="radio" name="sponsor" value="industry" /><span>Industry</span></label>
+              <label><input type="radio" name="sponsor" value="academic" checked /><span>Academic or hospital</span></label>
+              <label><input type="radio" name="sponsor" value="government" /><span>Government</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__name" for="area">Condition area</label>
+            <select id="area" name="area"></select>
+          </div>
+          <div class="field">
+            <span class="field__name">Intervention</span>
+            <div class="ticks" id="itypes"></div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="fid">B.2</span> Footprint</legend>
+          <div class="field field--pair">
+            <label class="num-in"><span class="field__name">Sites</span><input type="number" name="sites" min="1" max="2000" value="1" inputmode="numeric" /></label>
+            <label class="num-in"><span class="field__name">Countries</span><input type="number" name="countries" min="1" max="100" value="1" inputmode="numeric" /></label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="fid">B.3</span> Who can join</legend>
+          <div class="field field--pair">
+            <label class="num-in"><span class="field__name">Inclusion criteria</span><input type="number" name="n_inc" min="0" max="60" value="6" inputmode="numeric" /></label>
+            <label class="num-in"><span class="field__name">Exclusion criteria</span><input type="number" name="n_exc" min="0" max="80" value="12" inputmode="numeric" /></label>
+          </div>
+          <details class="paste">
+            <summary>Or paste the eligibility section and let it count</summary>
+            <textarea id="elig" rows="7" placeholder="Inclusion Criteria:&#10;* Age 18 or older&#10;* ...&#10;&#10;Exclusion Criteria:&#10;* Prior treatment with ...&#10;* ..."></textarea>
+            <p class="note" id="elig-out">Counts bullet lines under each heading, the same way the registry data was counted.</p>
+          </details>
+          <div class="field">
+            <span class="field__name">Population limits</span>
+            <div class="ticks">
+              <label><input type="checkbox" name="healthy" /><span>Healthy volunteers accepted</span></label>
+              <label><input type="checkbox" name="upper_age" /><span>Upper age limit (under 90)</span></label>
+              <label><input type="checkbox" name="kids_only" /><span>Children only</span></label>
+              <label><input type="checkbox" name="older_only" /><span>Adults 60+ only</span></label>
+              <label><input type="checkbox" name="one_sex" /><span>One sex only</span></label>
+            </div>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend><span class="fid">B.4</span> Design</legend>
+          <div class="field">
+            <div class="ticks">
+              <label><input type="checkbox" name="randomized" checked /><span>Randomized</span></label>
+              <label><input type="checkbox" name="blinded" /><span>Blinded (any masking)</span></label>
+            </div>
+          </div>
+          <div class="field field--pair">
+            <label class="num-in"><span class="field__name">Arms</span><input type="number" name="arms" min="1" max="20" value="2" inputmode="numeric" /></label>
+            <label class="num-in"><span class="field__name">Primary outcomes</span><input type="number" name="n_primary" min="1" max="20" value="1" inputmode="numeric" /></label>
+          </div>
+        </fieldset>
+      </form>
+
+      <aside class="result" aria-live="polite" aria-labelledby="result-h">
+        <p class="label" id="result-h">B.5 &middot; Estimate</p>
+        <p class="result__pct"><span id="r-pct">0%</span><small>chance of a low-accrual stop</small></p>
+        <p class="result__vs" id="r-vs"></p>
+        <div class="meter" aria-hidden="true">
+          <div class="meter__bar" id="r-meter"></div>
+          <span class="meter__tick" id="r-avg"></span>
+        </div>
+        <p class="meter__legend"><span>lowest-risk designs</span><span id="r-pctl"></span><span>highest-risk</span></p>
+
+        <h3 class="result__h">What moves it, vs the average registered trial</h3>
+        <ol class="moves" id="r-moves"></ol>
+
+        <h3 class="result__h">Edits worth testing</h3>
+        <ul class="whatifs" id="r-whatif"></ul>
+
+        <h3 class="result__h">Trials like yours, as registered</h3>
+        <p class="like" id="r-like"></p>
+        <ul class="examples" id="r-examples"></ul>
+        <p class="note">These are associations in registry data, not causes. A protocol with more sites is often a better-funded protocol. Use this to pick questions for a feasibility review, not to replace one.</p>
+      </aside>
+    </section>
+
+    <section class="wrap patterns" aria-labelledby="pat-h">
+      <p class="label">Section C &middot; what the registry shows</p>
+      <h2 id="pat-h">Share of trials stopped for low accrual, by design choice</h2>
+      <p class="patterns__lede">Each bar is the raw rate in the cohort, with a 95% interval. The dashed line is the cohort average. Bars are not adjusted for each other; the model in Section B is.</p>
+      <div class="grid" id="charts"></div>
+    </section>
+
+    <section class="wrap card" aria-labelledby="card-h">
+      <p class="label">Section D &middot; model card</p>
+      <h2 id="card-h">How much to trust the number</h2>
+      <div class="card__cols">
+        <div>
+          <dl class="stats" id="stats"></dl>
+          <p>A regularized logistic regression on <span data-bind="nFeat">43</span> design fields a sponsor knows before the first patient. To test it honestly, it was trained on trials that started 2010 to 2016 and scored on trials that started 2017 to 2019, which it never saw. The live estimate above uses a refit on all years.</p>
+        </div>
+        <figure class="calib">
+          <figcaption class="label">D.1 &middot; Calibration on 2017 to 2019 trials</figcaption>
+          <div id="calib"></div>
+          <p class="note">Each pair is one tenth of the test trials, sorted by predicted risk. Close bars mean the estimate matched what happened. The riskiest tenth is overestimated.</p>
+        </figure>
+      </div>
+      <div class="limits">
+        <h3>Known limits</h3>
+        <ul>
+          <li><b>Registry text is self-reported.</b> Sponsors write <code>whyStopped</code> however they like, and 622 terminated trials left it blank.</li>
+          <li><b>Site counts are the final registered list.</b> A study that stopped early may never have added its later sites, which flatters the "more sites" signal.</li>
+          <li><b>Withdrawn and unknown-status trials are not in the cohort.</b> Trials that never enrolled anyone are often marked withdrawn, so the true rate of enrollment failure is higher than shown.</li>
+          <li><b>No enrollment target.</b> Terminated trials report actual enrollment, not the plan, so target size could not be used fairly.</li>
+          <li><b>COVID-19 stops are their own bucket</b>, even when the text also mentions slow recruitment.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="wrap why" aria-labelledby="why-h">
+      <p class="label">Section E &middot; why this exists</p>
+      <h2 id="why-h">Where the idea came from</h2>
+      <p>At Cal Hacks 12.0 in October 2025, most of the projects that won Regeneron&rsquo;s prizes went after clinical trials. <a href="https://devpost.com/software/trialscope-ai">TrialScope AI</a> took the grand prize by turning protocol PDFs into structured designs and benchmarking them against historical studies. <a href="https://devpost.com/software/trial-match-ai">trialmatch.ai</a> matched patients to trials, and <a href="https://devpost.com/software/trialflow">TrialFlow</a> attacked visit scheduling and dropout.</p>
+      <p>Each of them is a big build with an AI layer. Underfilled is the small, checkable piece underneath: the base rates. Before anyone writes a matching agent, a study team should know how often designs like theirs ran dry, and which knobs moved with it.</p>
+      <p class="sig">Built by <a href="https://sheinapribadi-star.github.io/">Sheina Pribadi</a> &middot; <a href="https://github.com/sheinapribadi-star/underfilled">code and method</a> &middot; not medical, legal, or regulatory advice</p>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
