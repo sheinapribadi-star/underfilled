@@ -34,9 +34,9 @@ Every number on the site comes from that pull. The three example designs on the 
 
 ## Method
 
-- **Stop reasons:** readable regex rules. Tuned on two hand-read samples, then frozen and scored on 150 more terminated trials I labeled by hand: precision 0.96, recall 0.91 for the low-accrual bucket. COVID-19 stops are kept separate.
-- **Model:** L2-regularized logistic regression on 43 fields known before the first patient (phase, sponsor type, criteria counts, site and country counts, population limits, masking, randomization, arms, primary outcomes, condition area, intervention type).
-- **Honest test:** trained on trials that started 2010 to 2016, scored on 2017 to 2019. AUC 0.73. The riskiest tenth had 2.4x the base rate and held 24% of all low-accrual stops. The top tenth is somewhat overestimated (16.4% predicted vs 12.8% observed). The live tool uses a refit on all years.
+- **Stop reasons:** readable regex rules. Tuned on two hand-read samples, then frozen and scored on 150 more terminated trials, each read and labeled one by one: precision 0.96, recall 0.91 for the low-accrual bucket (51 true positives, 2 false positives, 5 misses). `scripts/check_classifier.py` reproduces it. COVID-19 stops are kept separate.
+- **Model:** L2-regularized logistic regression on 43 fields a sponsor sets before the first patient (phase, sponsor type, criteria counts, site and country counts, population limits, masking, randomization, arms, primary outcomes, condition area, intervention type). The values come from each trial's current registry record, so some (especially the site list) may have been edited after launch.
+- **Honest test:** trained on trials that started 2010 to 2016 (features scaled with training-year statistics only), scored on 2017 to 2019. AUC 0.73. Dropping the site and country fields entirely gives AUC 0.72, so the score does not hinge on the shakiest inputs. The riskiest tenth had 2.4x the base rate and held 24% of all low-accrual stops. The top tenth is somewhat overestimated (16.4% predicted vs 12.8% observed). The live tool uses a refit on all years.
 - **Raw rates** in the charts use 95% Wilson intervals.
 
 ## Design decisions
@@ -44,8 +44,9 @@ Every number on the site comes from that pull. The three example designs on the 
 - **A case report form, not a dashboard.** Clinical teams fill in forms all day. Numbered fields and hard rules read as a working document.
 - **One color means one thing.** Vermilion is only ever "stopped for low accrual." Slate blue is everything else.
 - **Raw rate next to the model.** "556 of 4,328 similar trials" is easier to trust and to argue with than a coefficient.
-- **Edits, not just a score.** The tool tries realistic changes (fewer exclusions, more sites, a second country) and shows the ones that move the estimate.
+- **Edits, not just a score.** The tool tries realistic changes (fewer exclusions, fewer inclusions, more sites, a second country) and shows the ones that move the estimate. They are labeled as model what-ifs, not predicted effects.
 - **Only pre-launch fields.** Actual enrollment is left out because stopped trials report what they reached, not what they planned.
+- **Say when the number runs hot.** If a design lands in the riskiest tenth, the result panel notes that this group was overestimated in testing.
 - **Static and keyless.** One JSON bundle, plain JavaScript, no tracking, served by GitHub Pages.
 
 ## The metric that would show it works
@@ -54,7 +55,7 @@ Among protocols flagged in the riskiest tenth, the share that get a documented d
 
 ## Limits
 
-Associations, not causes. Site counts are the final registered list. Withdrawn and unknown-status trials are outside the cohort, so true enrollment failure is higher than shown. `whyStopped` is self-reported. Not medical, legal, or regulatory advice.
+Associations, not causes. Site counts are the final registered list, and other fields come from the current record rather than the version registered at launch. Withdrawn and unknown-status trials are outside the cohort, so true enrollment failure is higher than shown. `whyStopped` is self-reported. Not medical, legal, or regulatory advice.
 
 ## Rebuild
 

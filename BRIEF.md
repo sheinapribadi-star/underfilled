@@ -37,12 +37,12 @@ All four are large builds with an AI layer. None of them shows the plain base ra
 
 ## Decisions
 
-- **Rules, not an LLM, for the stop reason.** Readable, free, and testable. Rules were tuned on two hand-read samples (220 trials), then frozen and scored on a third sample of 150 that I labeled by hand before looking at the output: precision 0.96, recall 0.91. `python3 scripts/check_classifier.py` reproduces it.
+- **Rules, not an LLM, for the stop reason.** Readable, free, and testable. Rules were tuned on two hand-read samples (220 trials), then frozen and scored on a third sample of 150, each read and labeled one by one before the rules were scored on it: precision 0.96, recall 0.91. `python3 scripts/check_classifier.py` reproduces it.
 - **COVID-19 is its own bucket.** A pandemic stop says little about protocol design, so it should not count against one.
-- **Only fields known before the first patient.** Actual enrollment is excluded because terminated trials report what they reached, not what they planned.
+- **Only fields known before the first patient.** Actual enrollment is excluded because terminated trials report what they reached, not what they planned. The values are read from the current registry record, so a field edited after launch (most often the site list) can leak a little. Refitting without site and country fields gives a holdout AUC of 0.72 vs 0.73, so the result does not depend on them.
 - **Temporal holdout.** Train on starts from 2010 to 2016, test on 2017 to 2019. A random split would flatter the model.
 - **Show the raw rate beside the model.** People trust "556 of 4,328 similar trials" more than a coefficient, and it lets them see when the model and the raw data disagree.
-- **Edits, not just a score.** A risk number without a next step is trivia. The tool tries a few realistic edits and shows the ones that move the estimate.
+- **Edits, not just a score.** A risk number without a next step is trivia. The tool tries a few realistic edits and shows the ones that move the estimate, labeled as model what-ifs rather than predicted effects, because the model is fit on observational registry data.
 - **Look:** a case report form. Numbered fields, hard rules, one dark results panel. Instrument Serif for headlines, Public Sans (the US federal web typeface) for body, DM Mono for data. Vermilion only ever means "stopped for low accrual."
 
 ## Results (holdout, trials started 2017 to 2019)
@@ -51,7 +51,7 @@ All four are large builds with an AI layer. None of them shows the plain base ra
 | --- | --- |
 | Test trials | 10,516 |
 | Base rate | 5.3% |
-| AUC | 0.73 |
+| AUC | 0.73 (0.72 without site and country fields) |
 | Brier score | 0.0483 (0.0498 guessing the base rate) |
 | Riskiest tenth | 2.4x the base rate, holding 24% of all low-accrual stops |
 

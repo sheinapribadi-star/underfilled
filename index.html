@@ -33,7 +33,7 @@
       <figure class="reasons" aria-labelledby="reasons-cap">
         <figcaption id="reasons-cap" class="label">A.1 &middot; Why terminated trials say they stopped</figcaption>
         <ol class="reasons__list" id="reasons"></ol>
-        <p class="note">Reasons come from the free-text <code>whyStopped</code> field, sorted by rules in <a href="https://github.com/sheinapribadi-star/underfilled/blob/main/scripts/reasons.py">reasons.py</a>. On 150 hand-read held-out trials the low-accrual bucket was right <span data-bind="clfPrecision">96%</span> of the time and caught <span data-bind="clfRecall">91%</span> of true cases.</p>
+        <p class="note">Reasons come from the free-text <code>whyStopped</code> field, sorted by rules in <a href="https://github.com/sheinapribadi-star/underfilled/blob/main/scripts/reasons.py">reasons.py</a>. On 150 held-out trials, each read and labeled one by one, the low-accrual bucket was right <span data-bind="clfPrecision">96%</span> of the time and caught <span data-bind="clfRecall">91%</span> of true cases.</p>
       </figure>
     </section>
 
@@ -134,12 +134,14 @@
           <span class="meter__tick" id="r-avg"></span>
         </div>
         <p class="meter__legend"><span>lowest-risk designs</span><span id="r-pctl"></span><span>highest-risk</span></p>
+        <p class="note" id="r-calib"></p>
 
         <h3 class="result__h">What moves it, vs the average registered trial</h3>
         <ol class="moves" id="r-moves"></ol>
 
         <h3 class="result__h">Edits worth testing</h3>
         <ul class="whatifs" id="r-whatif"></ul>
+        <p class="note">These are what-ifs on the model, not predicted effects. Trials with more sites also tend to have bigger budgets, so treat each edit as a question for the feasibility review.</p>
 
         <h3 class="result__h">Trials like yours, as registered</h3>
         <p class="like" id="r-like"></p>
@@ -161,7 +163,8 @@
       <div class="card__cols">
         <div>
           <dl class="stats" id="stats"></dl>
-          <p>A regularized logistic regression on <span data-bind="nFeat">43</span> design fields a sponsor knows before the first patient. To test it honestly, it was trained on trials that started 2010 to 2016 and scored on trials that started 2017 to 2019, which it never saw. The live estimate above uses a refit on all years.</p>
+          <p>A regularized logistic regression on <span data-bind="nFeat">43</span> design fields a sponsor sets before the first patient, read from each trial's current registry record. To test it honestly, it was trained on trials that started 2010 to 2016 and scored on trials that started 2017 to 2019, which it never saw. The live estimate above uses a refit on all years.</p>
+          <p>Site and country counts are the shakiest inputs, because they come from the final record. Refit without them, the holdout AUC is <span data-bind="aucNoSites">0.72</span>, so the score does not hinge on them.</p>
         </div>
         <figure class="calib">
           <figcaption class="label">D.1 &middot; Calibration on 2017 to 2019 trials</figcaption>

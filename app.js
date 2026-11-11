@@ -47,6 +47,7 @@
     set("shareOfTerm", pct(c.low_accrual / c.terminated, 0));
     set("baseRate", "1 in " + Math.round(c.n / c.low_accrual));
     set("nFeat", B.model.names.length);
+    if (B.model.holdout.auc_no_sites) set("aucNoSites", B.model.holdout.auc_no_sites.toFixed(2));
   }
 
   function drawReasons() {
@@ -173,6 +174,11 @@
     $("#r-avg").style.left = avgPc + "%";
     $("#r-avg").textContent = "average";
     $("#r-pctl").textContent = `riskier than ${pc}% of registered designs`;
+    // the holdout test overestimated the riskiest tenth, so say so where it applies
+    const cal = B.model.holdout.calibration[9];
+    $("#r-calib").textContent = pc >= 90
+      ? `Designs in the riskiest tenth were overestimated in testing: ${pct(cal.pred)} predicted vs ${pct(cal.obs)} observed on 2017 to 2019 trials. Read this as "high," not as an exact number.`
+      : "";
 
     // what moves it: contributions vs the average registered trial, grouped by form field
     const names = B.model.names;
@@ -222,11 +228,10 @@
     const nextSites = d.sites <= 1 ? 6 : d.sites <= 5 ? 6 : d.sites <= 20 ? 21 : d.sites <= 100 ? 101 : null;
     if (nextSites) tryEdit(`Open ${nextSites} sites instead of ${d.sites}`, { sites: nextSites });
     if (d.countries <= 1 && d.sites > 1) tryEdit("Recruit in a second country", { countries: 2 });
-    if (!d.healthy && d.phase === "1/2") tryEdit("Accept healthy volunteers for the early part", { healthy: true });
     edits.sort((a, b) => a.p2 - b.p2);
     $("#r-whatif").innerHTML = edits.length
       ? edits.slice(0, 3).map((e) => `<li>${esc(e.text)}: <b>${pct(p)} to ${pct(e.p2)}</b></li>`).join("")
-      : `<li>No simple edit moves this design much. It already sits near the low end for its type.</li>`;
+      : `<li>None of the simple edits (fewer criteria, more sites, a second country) lowers the estimate for this design.</li>`;
 
     // trials like yours
     const key = `${d.phase}|${d.sponsor}|${d.area || "unmapped"}`;
@@ -234,7 +239,7 @@
     const areaLabel = d.area ? B.areas.find((a) => a.k === d.area).label.toLowerCase() : "unmapped";
     const spon = { industry: "industry", academic: "academic or hospital", government: "government" }[d.sponsor];
     if (cell && cell[1] >= 30) {
-      $("#r-like").innerHTML = `Of <b>${fmt(cell[1])}</b> registered Phase ${d.phase} ${spon} trials in ${esc(areaLabel)}, <b>${fmt(cell[0])}</b> (${pct(cell[0] / cell[1])}) stopped for low accrual.`;
+      $("#r-like").innerHTML = `Of <b>${fmt(cell[1])}</b> Phase ${d.phase} ${spon} trials in ${esc(areaLabel)} in this cohort, <b>${fmt(cell[0])}</b> (${pct(cell[0] / cell[1])}) stopped for low accrual. Below are real low-accrual stops closest to your design.`;
     } else if (cell) {
       $("#r-like").innerHTML = `Only ${fmt(cell[1])} registered Phase ${d.phase} ${spon} trials in ${esc(areaLabel)}, too few for a stable rate. ${fmt(cell[0])} stopped for low accrual.`;
     } else {
@@ -246,7 +251,9 @@
     pick.sort((a, b) => (a.sp !== d.sponsor) - (b.sp !== d.sponsor) ||
       (Math.abs(Math.log1p(a.sites) - Math.log1p(d.sites)) + Math.abs(a.exc - d.n_exc) / 10) -
       (Math.abs(Math.log1p(b.sites) - Math.log1p(d.sites)) + Math.abs(b.exc - d.n_exc) / 10));
-    $("#r-examples").innerHTML = pick.slice(0, 3).map((e) =>
+    $("#r-examples").innerHTML = pick.length === 0
+      ? `<li>No low-accrual stops in this cohort match this phase and area.</li>`
+      : pick.slice(0, 3).map((e) =>
       `<li><a class="ex-id" href="https://clinicaltrials.gov/study/${e.nct}">${e.nct}</a> &middot; ${esc(e.t)}` +
       `<q>${esc(e.why)}</q></li>`).join("");
   }

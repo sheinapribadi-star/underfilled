@@ -231,8 +231,18 @@ def main():
 
     start = np.array([r["start"] for r in rows])
     tr, te = start <= 2016, start >= 2017
-    w_tr, _ = fit_logreg(Z[tr], y[tr])
-    p_te = predict(w_tr, Z[te])
+    # Holdout: scale with training-year statistics only, so nothing from 2017-2019 leaks in.
+    mu_tr, sd_tr = X[tr].mean(0), X[tr].std(0) + 1e-9
+    Z_ho = (X - mu_tr) / sd_tr
+    w_tr, _ = fit_logreg(Z_ho[tr], y[tr])
+    p_te = predict(w_tr, Z_ho[te])
+    # Robustness: site and country counts come from the final registry record, so
+    # refit without them to show how much the score leans on those fields.
+    keep = [i for i, n in enumerate(names) if not n.startswith("sites") and n != "multinational"]
+    Xk = X[:, keep]
+    mk, sk = Xk[tr].mean(0), Xk[tr].std(0) + 1e-9
+    w_k, _ = fit_logreg(((Xk - mk) / sk)[tr], y[tr])
+    auc_no_sites = auc(y[te], predict(w_k, ((Xk - mk) / sk)[te]))
     test_auc = auc(y[te], p_te)
     brier = float(np.mean((p_te - y[te]) ** 2))
     base_te = float(y[te].mean())
@@ -295,7 +305,7 @@ def main():
         "model": {"names": names, "mu": [round(float(v), 6) for v in mu], "sd": [round(float(v), 6) for v in sd],
                   "w": [round(float(v), 6) for v in w_all],
                   "holdout": {"train": "start 2010-2016", "test": "start 2017-2019", "n_train": int(tr.sum()), "n_test": int(te.sum()),
-                              "auc": round(test_auc, 3), "brier": round(brier, 4), "brier_base": round(brier_base, 4),
+                              "auc": round(test_auc, 3), "auc_no_sites": round(auc_no_sites, 3), "brier": round(brier, 4), "brier_base": round(brier_base, 4),
                               "base_rate": round(base_te, 4), "top_decile_lift": round(lift, 2),
                               "top_decile_share": round(share_caught, 3), "calibration": calib},
                   "coefs": coefs, "pctl": pctl},
